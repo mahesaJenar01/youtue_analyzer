@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+
+# Virtual Environment
+.env
+.venv
+
+# Google credentials
+credentials.json
+token.json
+token.pickle
