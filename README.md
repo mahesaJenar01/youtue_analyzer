@@ -61,10 +61,4 @@ Tweak settings in `settings.py` to:
 
 We're always improving! Got ideas? Open an issue or send a pull request.
 
-## 📄 License
-
-[Your License Here - MIT/Apache/etc.]
-
----
-
 Happy creating! 🎥🚀
