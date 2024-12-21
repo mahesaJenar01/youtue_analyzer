@@ -7,8 +7,7 @@ class Settings:
         'token_path': 'token.pickle',
         'report_period_days': 30,
         'max_videos': 10,
-        'log_level': 'INFO',
-        'output_format': 'gdocs'  # 'console' or 'gdocs'
+        'log_level': 'INFO'
     }
 
     @classmethod
@@ -19,6 +18,5 @@ class Settings:
             'token_path': os.getenv('YT_TOKEN_PATH', cls.DEFAULT_CONFIG['token_path']),
             'report_period_days': int(os.getenv('YT_REPORT_PERIOD', cls.DEFAULT_CONFIG['report_period_days'])),
             'max_videos': int(os.getenv('YT_MAX_VIDEOS', cls.DEFAULT_CONFIG['max_videos'])),
-            'log_level': os.getenv('YT_LOG_LEVEL', cls.DEFAULT_CONFIG['log_level']),
-            'output_format': os.getenv('YT_OUTPUT_FORMAT', cls.DEFAULT_CONFIG['output_format'])
+            'log_level': os.getenv('YT_LOG_LEVEL', cls.DEFAULT_CONFIG['log_level'])
         }

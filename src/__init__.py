@@ -1,4 +1,4 @@
 from .auth import SetAuth
+from .report import GDocsReporter
 from .utils import DataFormatter, DateHelper
-from .reports import ConsoleReporter, GDocsReporter
 from .analytics import ChannelAnalytics, DemographicsAnalytics, VideoAnalytics

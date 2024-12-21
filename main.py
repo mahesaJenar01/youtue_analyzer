@@ -6,7 +6,7 @@ from src.auth import SetAuth
 from dotenv import load_dotenv
 from config.settings import Settings
 from googleapiclient.discovery import build
-from src.reports import ConsoleReporter, GDocsReporter
+from src.report import GDocsReporter
 from src.analytics import (
     ChannelAnalytics, 
     VideoAnalytics, 
@@ -68,35 +68,26 @@ def gather_analytics_data(youtube, youtube_analytics, config: Dict[str, Any]) ->
         'videos': videos,
         'peak_viewing': peak_viewing,
         'geo_distribution': geo_distribution,
-        'trend_analysis': trend_data  # New trend analysis data
+        'trend_analysis': trend_data
     }
 
-def generate_report(data: Dict[str, Any], config: Dict[str, Any], credentials) -> None:
-    """Generate analytics report in specified format."""
-    if config['output_format'] == 'gdocs':
-        reporter = GDocsReporter(credentials)
+def generate_report(data: Dict[str, Any], credentials) -> None:
+    """Generate analytics report in Google Docs."""
+    reporter = GDocsReporter(credentials)
 
-        env_path = Path(__file__).parent / '.env'
-        load_dotenv(dotenv_path=env_path)
-        
-        doc_id = os.getenv('YOUTUBE_ANALYSIS_DOCS_ID')
-        reporter.create_report(
-            data['channel_stats'],
-            data['period_stats'],
-            data['videos'],
-            data['peak_viewing'],
-            data['geo_distribution'],
-            data.get('trend_analysis')
-        )
-        print(f"Report updated: https://docs.google.com/document/d/{doc_id}")
-    else:
-        reporter = ConsoleReporter()
-        reporter.print_channel_overview(data['channel_stats'])
-        reporter.print_period_analytics(data['period_stats'], config['report_period_days'])
-        reporter.print_video_details(data['videos'])
-        reporter.print_peak_viewing(data['peak_viewing'])
-        reporter.print_geography(data['geo_distribution'])
-        reporter.print_trend_analysis(data.get('trend_analysis'))
+    env_path = Path(__file__).parent / '.env'
+    load_dotenv(dotenv_path=env_path)
+    
+    doc_id = os.getenv('YOUTUBE_ANALYSIS_DOCS_ID')
+    reporter.create_report(
+        data['channel_stats'],
+        data['period_stats'],
+        data['videos'],
+        data['peak_viewing'],
+        data['geo_distribution'],
+        data.get('trend_analysis')
+    )
+    print(f"Report updated: https://docs.google.com/document/d/{doc_id}")
 
 def main():
     """Run YouTube Analytics report generation."""
@@ -116,7 +107,7 @@ def main():
         analytics_data = gather_analytics_data(youtube, youtube_analytics, config)
         
         # Generate report
-        generate_report(analytics_data, config, credentials)
+        generate_report(analytics_data, credentials)
             
     except Exception as e:
         logging.error(f"Error running analytics: {e}")
