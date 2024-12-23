@@ -6,7 +6,7 @@ class Settings:
         'credentials_path': 'credentials.json',
         'token_path': 'token.pickle',
         'report_period_days': 30,
-        'max_videos': 10,
+        'max_videos': 50,
         'log_level': 'INFO'
     }
 

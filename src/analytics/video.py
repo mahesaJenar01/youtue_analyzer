@@ -1,6 +1,7 @@
 from typing import Dict, List, Any
 from datetime import datetime, timedelta
-from src.analytics.demographics import DemographicsAnalytics
+from .demographics import DemographicsAnalytics
+from .impressions import ImpressionAnalytics
 
 class VideoAnalytics:
     def __init__(self, youtube, youtube_analytics):
@@ -8,51 +9,75 @@ class VideoAnalytics:
         self.youtube = youtube
         self.youtube_analytics = youtube_analytics
         self.demographics = DemographicsAnalytics(youtube_analytics)
+        self.impressions = ImpressionAnalytics(youtube_analytics)
 
-    def get_recent_videos(self, max_results: int = 10) -> List[Dict[str, Any]]:
+    def get_recent_videos(self, max_results: int = 50) -> List[Dict[str, Any]]:
         """Get recent videos with basic stats."""
-        # Get video IDs
-        videos_response = self.youtube.search().list(
-            part="snippet",
-            forMine=True,
-            maxResults=max_results,
-            type="video",
-            order="date"
-        ).execute()
-
-        if 'items' not in videos_response:
-            return []
-
-        # Get detailed stats
-        video_ids = [item['id']['videoId'] for item in videos_response['items']]
-        stats_response = self.youtube.videos().list(
-            part="statistics,snippet,contentDetails",
-            id=','.join(video_ids)
-        ).execute()
-
-        videos_data = []
-        for i, item in enumerate(stats_response.get('items', []), 1):
-            stats = item['statistics']
-            video_data = {
-                'title': item['snippet']['title'],
-                'id': item['id'],
-                'stats': {
-                    'views': int(stats.get('viewCount', 0)),
-                    'likes': int(stats.get('likeCount', 0)),
-                    'comments': int(stats.get('commentCount', 0))
-                },
-                'published_at': item['snippet']['publishedAt'],
-                'duration': self._format_duration(item['contentDetails']['duration']),
-                'demographics': self.demographics.get_video_demographics(item['id'])
-            }
-            # Add performance metrics
-            perf_data = self._get_performance_metrics(item['id'])
-            if perf_data:
-                video_data['performance'] = perf_data
-            
-            videos_data.append(video_data)
+        all_videos = []
+        page_token = None
         
-        return videos_data
+        while len(all_videos) < max_results:
+            # Get video IDs with pagination
+            videos_response = self.youtube.search().list(
+                part="snippet",
+                forMine=True,
+                maxResults=min(50, max_results - len(all_videos)),  # YouTube API limit is 50
+                type="video",
+                order="date",
+                pageToken=page_token
+            ).execute()
+            
+            if 'items' not in videos_response:
+                break
+                
+            # Get video IDs from this page
+            video_ids = [item['id']['videoId'] for item in videos_response['items']]
+            
+            # Get detailed stats for these videos
+            stats_response = self.youtube.videos().list(
+                part="statistics,snippet,contentDetails",
+                id=','.join(video_ids)
+            ).execute()
+            
+            # Process videos and add to list
+            for item in stats_response.get('items', []):
+                video_data = self._process_video_item(item)
+                all_videos.append(video_data)
+            
+            # Check if there are more pages
+            page_token = videos_response.get('nextPageToken')
+            if not page_token:
+                break
+        
+        return all_videos
+
+    def _process_video_item(self, item: Dict) -> Dict:
+        """Process a single video item."""
+        video_id = item['id']
+        stats = item['statistics']
+        video_data = {
+            'title': item['snippet']['title'],
+            'id': video_id,
+            'stats': {
+                'views': int(stats.get('viewCount', 0)),
+                'likes': int(stats.get('likeCount', 0)),
+                'comments': int(stats.get('commentCount', 0))
+            },
+            'published_at': item['snippet']['publishedAt'],
+            'duration': self._format_duration(item['contentDetails']['duration'])
+        }
+        
+        # Add performance metrics
+        perf_data = self._get_performance_metrics(video_id)
+        if perf_data:
+            video_data['performance'] = perf_data
+            
+        # Add impression metrics
+        impression_data = self.impressions.get_impression_metrics(video_id)
+        if impression_data:
+            video_data['impressions'] = impression_data
+        
+        return video_data
 
     def _get_performance_metrics(self, video_id: str) -> Dict[str, Any]:
         """Get performance metrics for a specific video."""
